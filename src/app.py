@@ -19,6 +19,6 @@ def hello(*args):
 @my_bot.command()
 @asyncio.coroutine
 def reload(*args):
-    sys.exit(0)
+    my_bot.logout()
 
 my_bot.run(os.environ['DISCORD_TOKEN'])
