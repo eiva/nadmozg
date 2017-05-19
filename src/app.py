@@ -19,7 +19,7 @@ def hello(*args):
 @my_bot.command()
 @asyncio.coroutine
 def reload(*args):
-    my_bot.say("Reloading")
-    return my_bot.close()
+    yield from my_bot.say("Reloading...")
+    yield from my_bot.close()
 
 my_bot.run(os.environ['DISCORD_TOKEN'])
