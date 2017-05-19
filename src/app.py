@@ -35,7 +35,9 @@ def reload(*args):
 def weather(*param):
     print(param)
     if len(param) != 1:
-        return my_bot.say("Ussage: !weather {dc, mos, b}")
+        yield from my_bot.say("Ussage: !weather {dc, mos, b, nyc}")
+        return
+
     param = param[0].upper()
     print(param)
     if param == 'DC':
@@ -44,8 +46,11 @@ def weather(*param):
         coords=(55.75222, 37.615560)
     elif param == 'B':
         coords=(52.5243700, 13.4105300)
+    elif param == 'NYC':
+        coords=(40.730610, -73.935342)
     else:
-        return my_bot.say("Only dc, mos ot b for now")
+        yield from my_bot.say("Only dc, nyc, mos ot b for now")
+        return
 
     token = "a229ef1d142a0f2af70e4d920ab45698"
     url = 'https://{url}/{token}/{latitude:.4f},{longitude:.4f}'.format(
