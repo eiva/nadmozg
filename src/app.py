@@ -31,7 +31,7 @@ def reload(*args):
 
 @my_bot.command()
 @asyncio.coroutine
-def weather(param):
+def weather(*param):
     if len(param) != 1:
         return my_bot.say("Ussage: !weather {dc, mos, b}")
     param = param[0].upper()
