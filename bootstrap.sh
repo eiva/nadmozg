@@ -2,7 +2,7 @@
 while :
 do
 
-rm -rf .ve
+# rm -rf .ve  # This is too slow on rpi - disabled for a best time
 
 git pull
 
