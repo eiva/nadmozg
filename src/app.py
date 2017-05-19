@@ -1,3 +1,9 @@
+import pip
+
+pip.main(['install', 'requests'])
+
+
+import requests
 import os
 import discord
 import asyncio
