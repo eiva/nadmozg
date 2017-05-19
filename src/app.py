@@ -1,6 +1,7 @@
 import os
 import discord
 import asyncio
+import sys
 from discord.ext.commands import Bot
 
 my_bot = Bot(command_prefix="!") 
@@ -14,5 +15,10 @@ def on_read():
 @asyncio.coroutine
 def hello(*args):
     return my_bot.say("Hello, world!")
+
+@my_bot.command()
+@asyncio.coroutine
+def reload(*args):
+    sys.exit(0)
 
 my_bot.run(os.environ['DISCORD_TOKEN'])
