@@ -58,20 +58,20 @@ def weather(*param):
         yield from my_bot.say("Only dc, nyc, sf, mos ot b for now")
         return
 
-    token = "a229ef1d142a0f2af70e4d920ab45698"
+    token = os.environ['DARKSKY_TOKEN']
     url = 'https://{url}/{token}/{latitude:.4f},{longitude:.4f}'.format(
         url='api.darksky.net/forecast',
         token=token,
         latitude=coords[0],
         longitude=coords[1],
     )
-    print("Fetching %r"% url)
+
     loop = asyncio.get_event_loop()
     async_request = loop.run_in_executor(None, requests.get, url)
     response = yield from async_request
-    print("Result %r"% response.status_code)
+
     data = response.json()['currently']
-    print(data)
+
     def to_celsius(f):
         return (float(f) - 32.0) * 5.0 / 9.0
 
