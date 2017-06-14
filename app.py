@@ -3,8 +3,11 @@ import os
 import discord
 import asyncio
 import sys
+import psycopg2
+import urllib.parse
 from discord.ext.commands import Bot
 
+urllib.parse.uses_netloc.append("postgress")
 my_bot = Bot(command_prefix="!") 
 
 @my_bot.event 
@@ -12,15 +15,23 @@ my_bot = Bot(command_prefix="!")
 def on_read():
     print("Client logged in")
 
-@my_bot.command()
-@asyncio.coroutine
-def hello(*args):
-    return my_bot.say("Hello, world!")
 
 @my_bot.command()
 @asyncio.coroutine
-def ttt(*args):
-   return my_bot.say("Сам ты ttt")
+def db(*args):
+    '''
+    Test database conection
+    '''
+    try:
+        url = urllib.parse.urlparse(os.environ["DATABASE_URL"])
+        conn = psycopg2.connect(database=url.path[1:],
+                                user=url.username,
+                                password=url.password,
+                                host=url.hostname,
+                                port=url.port)
+        return my_bot.say(conn.status)
+    except Exception as e:
+        return my_bot.say(e)
 
 @my_bot.command()
 @asyncio.coroutine
