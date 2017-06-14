@@ -17,6 +17,10 @@ def on_read():
 def hello(*args):
     return my_bot.say("Hello, world!")
 
+@my_bot.command()
+@asyncio.coroutine
+def ttt(*args):
+   return my_bot.say("Сам ты ttt")
 
 @my_bot.command()
 @asyncio.coroutine
