@@ -6,8 +6,33 @@ import sys
 import psycopg2
 import urllib.parse
 from discord.ext.commands import Bot
+from sqlalchemy import create_engine
+from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-urllib.parse.uses_netloc.append("postgress")
+
+Base = declarative_base()
+
+class GeoLoc(Base):
+    '''
+    Definition of geographical location.
+    '''
+    __tablename__ = 'geoloc'                                                                                                                                 
+    name = Column(String, primary_key=True)
+    lat = Column(Float, nullable=False)                                                                                                                                      
+    lon = Column(Float, nullable=False)
+
+    def __repr__(self):
+        return "<GeoLoc(%s, (%f, %f))>"%(self.name, self.lat, self.lon)
+
+
+db_engine = create_engine(os.environ["DATABASE_URL"])
+Base.metadata.create_all(db_engine)
+
+Session = sessionmaker(bind=db_engine, autocommit=True)
+session = Session()
+
 my_bot = Bot(command_prefix="!") 
 
 @my_bot.event 
@@ -23,13 +48,8 @@ def db(*args):
     Test database conection
     '''
     try:
-        url = urllib.parse.urlparse(os.environ["DATABASE_URL"])
-        conn = psycopg2.connect(database=url.path[1:],
-                                user=url.username,
-                                password=url.password,
-                                host=url.hostname,
-                                port=url.port)
-        return my_bot.say(conn.status)
+        # session.add(GeoLoc(name='DC', lat=38.9977, lon=-77.0988))
+        return my_bot.say(session.query(GeoLoc).first())
     except Exception as e:
         return my_bot.say(e)
 
