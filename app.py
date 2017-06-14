@@ -67,21 +67,16 @@ def config_geo(*args):
 @asyncio.coroutine
 def config(*args):
     '''
-    Make come configuration magic
+    Make come configuration magic.
     '''
     try:
         command = args[0].upper()
         if command == 'GEO':
-            return config_geo(args[1:])
-
-        return my_bot.say('Unknown command: {{ GEO }}')
+            return config_geo(*args[1:])
+        else:
+            return my_bot.say('Unknown command: {{ GEO }}')
     except Exception as e:
         return my_bot.say(e)
-
-@my_bot.command()
-@asyncio.coroutine
-def ccc(command, subcommand, *args):
-    return my_bot.say(command, ";", subcommand, ";", '.'.join(args))
 
 @my_bot.command()
 @asyncio.coroutine
@@ -98,6 +93,9 @@ def reload(*args):
 @my_bot.command()
 @asyncio.coroutine
 def weather(*param):
+    '''
+    Show weather forecast for location.
+    '''
     print(param)
     if len(param) != 1:
         yield from my_bot.say("Ussage: !weather {dc, mos, b, nyc, sf}")
