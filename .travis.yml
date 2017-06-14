@@ -7,5 +7,8 @@ language: python
 python:
    - "3.6"
 
+script:
+  - python -m pytest -v
+
 after_success:
   - sh .travis/deploy_dockerhub.sh
