@@ -40,18 +40,48 @@ my_bot = Bot(command_prefix="!")
 def on_read():
     print("Client logged in")
 
+def say_in_block(message: str):
+    return my_bot.say('```\n' + message + '\n```')
+
+def config_geo(*args):
+    '''
+    !config geo (add dc 4.5 8.6)
+    '''
+    # session.add(GeoLoc(name='DC', lat=38.9977, lon=-77.0988))
+    command = args[0].upper()
+    if command == 'ADD':
+        name = str(args[1].upper())
+        lat = float(args[2])
+        lon = float(args[3])
+        new_loc = GeoLoc(name=name, lat=lat, lon=lon)
+        session.add(new_loc)
+        return my_bot.say('New location added' + str(new_loc))
+    elif command == 'LIST':
+        res = session.query(GeoLoc).all()
+        s = '\n'.join(res)
+        return say_in_block(s)
+    else:
+        return my_bot.say('Unknown geo command: {{ ADD, LIST }}')
 
 @my_bot.command()
 @asyncio.coroutine
-def db(*args):
+def config(*args):
     '''
-    Test database conection
+    Make come configuration magic
     '''
     try:
-        # session.add(GeoLoc(name='DC', lat=38.9977, lon=-77.0988))
-        return my_bot.say(session.query(GeoLoc).first())
+        command = args[0].upper()
+        if command == 'GEO':
+            return config_geo(args[1:])
+
+        return my_bot.say('Unknown command: {{ GEO }}')
     except Exception as e:
         return my_bot.say(e)
+
+@my_bot.command()
+@asyncio.coroutine
+def ccc(command, subcommand, *args):
+    return my_bot.say(command, ";", subcommand, ";", '.'.join(args))
 
 @my_bot.command()
 @asyncio.coroutine
