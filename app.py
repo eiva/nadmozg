@@ -10,7 +10,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 import discord
-from discord.ext.commands import Bot
+from discord.ext.commands import Bot, group
 from discord.embeds import Embed
 
 import socket
@@ -24,14 +24,13 @@ random.seed()
 
 Base = declarative_base()
 
-def send_metric(metric, value):
-    prefix = os.environ["HOSTEDGRAPHITE_PREFIX"]
-    conn = socket.create_connection((prefix + ".carbon.hostedgraphite.com", 2003))
-    conn.send("{}.nadmozg.{} {}\n".format(os.environ["HOSTEDGRAPHITE_APIKEY"], metric, value))
-    conn.close()
-
 @contextmanager
 def timeblock(metric):
+    def send_metric(metric, value):
+        prefix = os.environ["HOSTEDGRAPHITE_PREFIX"]
+        conn = socket.create_connection((prefix + ".carbon.hostedgraphite.com", 2003))
+        conn.send("{}.nadmozg.{} {}\n".format(os.environ["HOSTEDGRAPHITE_APIKEY"], metric, value))
+        conn.close()
     start = time.perf_counter()
     try:
         yield
@@ -58,63 +57,60 @@ print("Created")
 Session = sessionmaker(bind=db_engine, autocommit=True)
 session = Session()
 print("Session")
-my_bot = Bot(command_prefix="!")
+my_bot = Bot(command_prefix="!", description="I'm pretty stupid")
 
+async def say_in_block(message: str):
+    await my_bot.say('```\n' + message + '\n```')
 
 @my_bot.event
-@asyncio.coroutine
-def on_read():
+async def on_read():
     print('Client logged in')
 
-def say_in_block(message: str):
-    return my_bot.say('```\n' + message + '\n```')
-
-def config_geo(*args):
-    '''
-    !config geo (add dc 4.5 8.6)
-    '''
-
-    command = args[0].upper()
-    if command == 'ADD':
-        name = str(args[1].upper())
-        lat = float(args[2])
-        lon = float(args[3])
-        new_loc = GeoLoc(name=name, lat=lat, lon=lon)
-        session.add(new_loc)
-        return my_bot.say('New location added' + str(new_loc))
-    elif command == 'LIST':
-        res = session.query(GeoLoc).all()
-        s = '\n'.join([str(r) for r in res])
-        return say_in_block(s)
-    else:
-        return my_bot.say('Unknown geo command: {{ ADD, LIST }}')
-
-@my_bot.command()
-@asyncio.coroutine
-def config(*args):
+@my_bot.group(name="config", pass_context=True)
+async def config(ctx):
     '''
     Make some configuration magic.
     '''
-    try:
-        command = args[0].upper()
-        if command == 'GEO':
-            return config_geo(*args[1:])
-        else:
-            return my_bot.say('Unknown command: {{ GEO }}')
-    except Exception as e:
-        return my_bot.say(e)
+    if ctx.invoked_subcommand is None:
+        await my_bot.say('Unknown command: {{ GEO }}')
+
+@config.group(name = 'geo', pass_context=True)
+async def _config_geo(ctx):
+    '''
+    Manage geographical locations.
+    '''
+    if ctx.invoked_subcommand is None:
+        await my_bot.say('Unknown command: {{ ADD, LIST }}')
+
+@_config_geo.command(name="list", pass_context=False)
+async def _config_geo_list():
+    '''
+    List geographical locations.
+    '''
+    res = session.query(GeoLoc).all()
+    s = '\n'.join([str(r) for r in res])
+    await say_in_block(s)
+
+@_config_geo.command(name="add", pass_context=False)
+async def _config_geo_add(n, la, lo):
+    '''
+    Add location <location code> <lat> <lon>
+    '''
+    name = str(n.upper())
+    lat = float(la)
+    lon = float(lo)
+    new_loc = GeoLoc(name=name, lat=lat, lon=lon)
+    session.add(new_loc)
+    await my_bot.say('New location added' + str(new_loc))
 
 @my_bot.command()
-@asyncio.coroutine
-def dump(*args):
+async def dump(*args):
     return my_bot.say('```\n' + str(args) + '\n```')
 
-
 @my_bot.command()
-@asyncio.coroutine
-def reload(*args):
-    yield from my_bot.say("Reloading...")
-    yield from my_bot.close()
+async def reload():
+    await my_bot.say("Reloading...")
+    await my_bot.close()
 
 def color_by_temp(t):
     '''
@@ -148,16 +144,12 @@ async def get_forecast(loc: GeoLoc):
     return dict(response.json())['currently']
 
 @my_bot.command(pass_context=True)
-async def weather(ctx, *param):
+async def weather(ctx, ln):
     '''
     Show weather forecast for location.
     '''
-    print(param)
-    if len(param) != 1:
-        await my_bot.say('Ussage: !weather {dc, mos, b, nyc, sf}')
-        return
 
-    loc_name = param[0].upper()
+    loc_name = ln.upper()
     loc = session.query(GeoLoc).filter(GeoLoc.name == loc_name).first()
     if not loc:
          await my_bot.say('Use `!config geo list` to see all locations or `!config geo add` to add new one')
@@ -180,13 +172,12 @@ async def weather(ctx, *param):
     await my_bot.send_message(ctx.message.channel, content = None, embed=embed)
 
 @my_bot.command()
-@asyncio.coroutine
-def roll(*args):
+async def roll(*args):
     '''
     Roll a random number.
     By default it is [1-100].
     '''
-    return my_bot.say(':game_die:' + str(random.randint(1, 100)))
+    return my_bot.say(':game_die: ' + str(random.randint(1, 100)))
 
 print('Bot is started...')
 my_bot.run(os.environ['DISCORD_TOKEN'])
