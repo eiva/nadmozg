@@ -13,6 +13,7 @@ from sqlalchemy.orm import sessionmaker
 import socket
 from contextlib import contextmanager
 import time
+import logging
 
 Base = declarative_base()
 
@@ -46,16 +47,17 @@ class GeoLoc(Base):
 
 db_engine = create_engine(os.environ["DATABASE_URL"])
 Base.metadata.create_all(db_engine)
-
+print("Created")
 Session = sessionmaker(bind=db_engine, autocommit=True)
 session = Session()
-
+print("Session")
 my_bot = Bot(command_prefix="!")
+
 
 @my_bot.event
 @asyncio.coroutine
 def on_read():
-    print("Client logged in")
+    print('Client logged in')
 
 def say_in_block(message: str):
     return my_bot.say('```\n' + message + '\n```')
@@ -86,15 +88,14 @@ def config(*args):
     '''
     Make come configuration magic.
     '''
-    with timeblock('config'):
-        try:
-            command = args[0].upper()
-            if command == 'GEO':
-                return config_geo(*args[1:])
-            else:
-                return my_bot.say('Unknown command: {{ GEO }}')
-        except Exception as e:
-            return my_bot.say(e)
+    try:
+        command = args[0].upper()
+        if command == 'GEO':
+            return config_geo(*args[1:])
+        else:
+            return my_bot.say('Unknown command: {{ GEO }}')
+    except Exception as e:
+        return my_bot.say(e)
 
 @my_bot.command()
 @asyncio.coroutine
@@ -117,38 +118,38 @@ def weather(*param):
     '''
     print(param)
     if len(param) != 1:
-        yield from my_bot.say("Ussage: !weather {dc, mos, b, nyc, sf}")
+        yield from my_bot.say('Ussage: !weather {dc, mos, b, nyc, sf}')
         return
 
-    with timeblock('weather'):
-        loc_name = param[0].upper()
-        loc = session.query(GeoLoc).filter_by(name == loc_name).first()
-        if not loc:
-             yield from my_bot.say("Use `!config geo list` to see all locations or `!config geo add` to add new one")
+    loc_name = param[0].upper()
+    loc = session.query(GeoLoc).filter(GeoLoc.name == loc_name).first()
+    if not loc:
+         yield from my_bot.say('Use `!config geo list` to see all locations or `!config geo add` to add new one')
 
-        token = os.environ['DARKSKY_TOKEN']
-        url = 'https://{url}/{token}/{latitude:.4f},{longitude:.4f}'.format(
-            url='api.darksky.net/forecast',
-            token=token,
-            latitude=loc.lat,
-            longitude=loc.lon)
+    token = os.environ['DARKSKY_TOKEN']
+    url = 'https://{url}/{token}/{latitude:.4f},{longitude:.4f}'.format(
+        url='api.darksky.net/forecast',
+        token=token,
+        latitude=loc.lat,
+        longitude=loc.lon)
 
-        loop = asyncio.get_event_loop()
-        async_request = loop.run_in_executor(None, requests.get, url)
-        response = yield from async_request
+    loop = asyncio.get_event_loop()
+    async_request = loop.run_in_executor(None, requests.get, url)
+    response = yield from async_request
 
-        data = response.json()['currently']
+    data = response.json()['currently']
 
-        def to_celsius(f):
-            return (float(f) - 32.0) * 5.0 / 9.0
+    def to_celsius(f):
+        return (float(f) - 32.0) * 5.0 / 9.0
 
-        result = "{0:.0f} \u00B0C".format(to_celsius(data['apparentTemperature']))
-        if data['windSpeed'] >= 2.0:
-            result += " at {0:.1f} mph wind".format(data['windSpeed'])
-        if data['precipProbability'] > 0:
-            result += " and I am {0:.0f}% sure it is {1}".format(
-                data['precipProbability'] * 100,
-                "raining" if data['temperature'] > 32.0 else "snowing")
-        yield from my_bot.say(result)
+    result = '{0:.0f} \u00B0C'.format(to_celsius(data['apparentTemperature']))
+    if data['windSpeed'] >= 2.0:
+        result += ' at {0:.1f} mph wind'.format(data['windSpeed'])
+    if data['precipProbability'] > 0:
+        result += ' and I am {0:.0f}% sure it is {1}'.format(
+            data['precipProbability'] * 100,
+            'raining' if data['temperature'] > 32.0 else 'snowing')
+    yield from my_bot.say(result)
 
+print("Starting bot")
 my_bot.run(os.environ['DISCORD_TOKEN'])
