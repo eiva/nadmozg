@@ -19,7 +19,7 @@ Base = declarative_base()
 def send_metric(metric, value):
     prefix = os.environ["HOSTEDGRAPHITE_PREFIX"]
     conn = socket.create_connection((prefix + ".carbon.hostedgraphite.com", 2003))
-    conn.send("{}.{} {}\n".format(os.environ["HOSTEDGRAPHITE_APIKEY"], metric, value))
+    conn.send("{}.nadmozg.{} {}\n".format(os.environ["HOSTEDGRAPHITE_APIKEY"], metric, value))
     conn.close()
 
 @contextmanager
@@ -108,6 +108,7 @@ def reload(*args):
     yield from my_bot.say("Reloading...")
     yield from my_bot.close()
 
+
 @my_bot.command()
 @asyncio.coroutine
 def weather(*param):
@@ -120,28 +121,17 @@ def weather(*param):
         return
 
     with timeblock('weather'):
-        param = param[0].upper()
-
-        if param == 'DC':
-            coords=(38.9977, -77.0988)
-        elif param == 'MOS':
-            coords=(55.75222, 37.615560)
-        elif param == 'B':
-            coords=(52.5243700, 13.4105300)
-        elif param == 'NYC':
-            coords=(40.730610, -73.935342)
-        elif param == 'SF':
-            coords = (37.751, -122.3784)
-        else:
-            yield from my_bot.say("Only dc, nyc, sf, mos ot b for now")
-            return
+        loc_name = param[0].upper()
+        loc = session.query(GeoLoc).filter_by(name == loc_name).first()
+        if not loc:
+             yield from my_bot.say("Use `!config geo list` to see all locations or `!config geo add` to add new one")
 
         token = os.environ['DARKSKY_TOKEN']
         url = 'https://{url}/{token}/{latitude:.4f},{longitude:.4f}'.format(
             url='api.darksky.net/forecast',
             token=token,
-            latitude=coords[0],
-            longitude=coords[1])
+            latitude=loc.lat,
+            longitude=loc.lon)
 
         loop = asyncio.get_event_loop()
         async_request = loop.run_in_executor(None, requests.get, url)
