@@ -133,7 +133,7 @@ def color_by_temp(t):
     else:
        return 0xd64420
 
-def get_forecast(loc: GeoLoc):
+async def get_forecast(loc: GeoLoc):
     token = os.environ['DARKSKY_TOKEN']
     url = 'https://{url}/{token}/{latitude:.4f},{longitude:.4f}'.format(
         url='api.darksky.net/forecast',
@@ -143,9 +143,9 @@ def get_forecast(loc: GeoLoc):
 
     loop = asyncio.get_event_loop()
     async_request = loop.run_in_executor(None, requests.get, url)
-    response = yield from async_request
+    response = await async_request
 
-    return response.json()['currently']
+    return dict(response.json())['currently']
 
 @my_bot.command(pass_context=True)
 async def weather(ctx, *param):
@@ -162,11 +162,13 @@ async def weather(ctx, *param):
     if not loc:
          await my_bot.say('Use `!config geo list` to see all locations or `!config geo add` to add new one')
 
-    data = get_forecast(loc)
+    data = await get_forecast(loc)
 
     def to_celsius(f):
         return (float(f) - 32.0) * 5.0 / 9.0
+
     t_in_c = to_celsius(data['apparentTemperature'])
+
     result = '{0:.0f} \u00B0C'.format(t_in_c)
     if data['windSpeed'] >= 2.0:
         result += ' at {0:.1f} mph wind'.format(data['windSpeed'])
