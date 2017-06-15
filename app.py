@@ -186,7 +186,7 @@ def roll(*args):
     Roll a random number.
     By default it is [1-100].
     '''
-    return my_bot.say(str(random.randint(1, 100)))
+    return my_bot.say(':game_die:' + str(random.randint(1, 100)))
 
 print('Bot is started...')
 my_bot.run(os.environ['DISCORD_TOKEN'])
