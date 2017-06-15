@@ -10,17 +10,34 @@ from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-
+import socket
+from contextlib import contextmanager
+import time
 
 Base = declarative_base()
+
+def send_metric(metric, value):
+    prefix = os.environ["HOSTEDGRAPHITE_PREFIX"]
+    conn = socket.create_connection((prefix + ".carbon.hostedgraphite.com", 2003))
+    conn.send("{}.{} {}\n".format(os.environ["HOSTEDGRAPHITE_APIKEY"], metric, value))
+    conn.close()
+
+@contextmanager
+def timeblock(metric):
+    start = time.perf_counter()
+    try:
+        yield
+    finally:
+        end = time.perf_counter()
+        send_metric(metric, end - start)
 
 class GeoLoc(Base):
     '''
     Definition of geographical location.
     '''
-    __tablename__ = 'geoloc'                                                                                                                                 
+    __tablename__ = 'geoloc'
     name = Column(String, primary_key=True)
-    lat = Column(Float, nullable=False)                                                                                                                                      
+    lat = Column(Float, nullable=False)
     lon = Column(Float, nullable=False)
 
     def __repr__(self):
@@ -33,10 +50,10 @@ Base.metadata.create_all(db_engine)
 Session = sessionmaker(bind=db_engine, autocommit=True)
 session = Session()
 
-my_bot = Bot(command_prefix="!") 
+my_bot = Bot(command_prefix="!")
 
-@my_bot.event 
-@asyncio.coroutine 
+@my_bot.event
+@asyncio.coroutine
 def on_read():
     print("Client logged in")
 
@@ -47,7 +64,7 @@ def config_geo(*args):
     '''
     !config geo (add dc 4.5 8.6)
     '''
-    # session.add(GeoLoc(name='DC', lat=38.9977, lon=-77.0988))
+
     command = args[0].upper()
     if command == 'ADD':
         name = str(args[1].upper())
@@ -69,14 +86,15 @@ def config(*args):
     '''
     Make come configuration magic.
     '''
-    try:
-        command = args[0].upper()
-        if command == 'GEO':
-            return config_geo(*args[1:])
-        else:
-            return my_bot.say('Unknown command: {{ GEO }}')
-    except Exception as e:
-        return my_bot.say(e)
+    with timeblock('config'):
+        try:
+            command = args[0].upper()
+            if command == 'GEO':
+                return config_geo(*args[1:])
+            else:
+                return my_bot.say('Unknown command: {{ GEO }}')
+        except Exception as e:
+            return my_bot.say(e)
 
 @my_bot.command()
 @asyncio.coroutine
@@ -101,46 +119,46 @@ def weather(*param):
         yield from my_bot.say("Ussage: !weather {dc, mos, b, nyc, sf}")
         return
 
-    param = param[0].upper()
-    print(param)
-    if param == 'DC':
-        coords=(38.9977, -77.0988)
-    elif param == 'MOS':
-        coords=(55.75222, 37.615560)
-    elif param == 'B':
-        coords=(52.5243700, 13.4105300)
-    elif param == 'NYC':
-        coords=(40.730610, -73.935342)
-    elif param == 'SF':
-        coords = (37.751, -122.3784)
-    else:
-        yield from my_bot.say("Only dc, nyc, sf, mos ot b for now")
-        return
+    with timeblock('weather'):
+        param = param[0].upper()
 
-    token = os.environ['DARKSKY_TOKEN']
-    url = 'https://{url}/{token}/{latitude:.4f},{longitude:.4f}'.format(
-        url='api.darksky.net/forecast',
-        token=token,
-        latitude=coords[0],
-        longitude=coords[1],
-    )
+        if param == 'DC':
+            coords=(38.9977, -77.0988)
+        elif param == 'MOS':
+            coords=(55.75222, 37.615560)
+        elif param == 'B':
+            coords=(52.5243700, 13.4105300)
+        elif param == 'NYC':
+            coords=(40.730610, -73.935342)
+        elif param == 'SF':
+            coords = (37.751, -122.3784)
+        else:
+            yield from my_bot.say("Only dc, nyc, sf, mos ot b for now")
+            return
 
-    loop = asyncio.get_event_loop()
-    async_request = loop.run_in_executor(None, requests.get, url)
-    response = yield from async_request
+        token = os.environ['DARKSKY_TOKEN']
+        url = 'https://{url}/{token}/{latitude:.4f},{longitude:.4f}'.format(
+            url='api.darksky.net/forecast',
+            token=token,
+            latitude=coords[0],
+            longitude=coords[1])
 
-    data = response.json()['currently']
+        loop = asyncio.get_event_loop()
+        async_request = loop.run_in_executor(None, requests.get, url)
+        response = yield from async_request
 
-    def to_celsius(f):
-        return (float(f) - 32.0) * 5.0 / 9.0
+        data = response.json()['currently']
 
-    result = "{0:.0f} \u00B0C".format(to_celsius(data['apparentTemperature']))
-    if data['windSpeed'] >= 2.0:
-        result += " at {0:.1f} mph wind".format(data['windSpeed'])
-    if data['precipProbability'] > 0:
-        result += " and I am {0:.0f}% sure it is {1}".format(
-            data['precipProbability'] * 100,
-            "raining" if data['temperature'] > 32.0 else "snowing")
-    yield from my_bot.say(result)
+        def to_celsius(f):
+            return (float(f) - 32.0) * 5.0 / 9.0
+
+        result = "{0:.0f} \u00B0C".format(to_celsius(data['apparentTemperature']))
+        if data['windSpeed'] >= 2.0:
+            result += " at {0:.1f} mph wind".format(data['windSpeed'])
+        if data['precipProbability'] > 0:
+            result += " and I am {0:.0f}% sure it is {1}".format(
+                data['precipProbability'] * 100,
+                "raining" if data['temperature'] > 32.0 else "snowing")
+        yield from my_bot.say(result)
 
 my_bot.run(os.environ['DISCORD_TOKEN'])
