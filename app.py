@@ -77,7 +77,7 @@ def config_geo(*args):
         return my_bot.say('New location added' + str(new_loc))
     elif command == 'LIST':
         res = session.query(GeoLoc).all()
-        s = '\n'.join(res)
+        s = '\n'.join([str(r) for r in res])
         return say_in_block(s)
     else:
         return my_bot.say('Unknown geo command: {{ ADD, LIST }}')
@@ -86,7 +86,7 @@ def config_geo(*args):
 @asyncio.coroutine
 def config(*args):
     '''
-    Make come configuration magic.
+    Make some configuration magic.
     '''
     try:
         command = args[0].upper()
