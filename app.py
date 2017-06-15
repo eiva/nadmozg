@@ -14,6 +14,10 @@ import socket
 from contextlib import contextmanager
 import time
 import logging
+import random
+
+print('Starting bot')
+random.seed()
 
 Base = declarative_base()
 
@@ -151,5 +155,14 @@ def weather(*param):
             'raining' if data['temperature'] > 32.0 else 'snowing')
     yield from my_bot.say(result)
 
-print("Starting bot")
+@my_bot.command()
+@asyncio.coroutine
+def roll(*args):
+    '''
+    Roll a random number.
+    By default it is [1-100].
+    '''
+    return my_bot.say(str(random.randint(1, 100)))
+
+print('Bot is started...')
 my_bot.run(os.environ['DISCORD_TOKEN'])
