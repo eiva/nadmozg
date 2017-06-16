@@ -63,6 +63,11 @@ async def say_in_block(message: str):
     await my_bot.say('```\n' + message + '\n```')
 
 @my_bot.event
+async def on_message(message):
+    # do some extra stuff here
+    await my_bot.process_commands(message)
+
+@my_bot.event
 async def on_read():
     print('Client logged in')
 
@@ -171,13 +176,68 @@ async def weather(ctx, ln):
     embed = Embed(colour=color_by_temp(t_in_c), title="Weather in " + loc_name, description=result)
     await my_bot.send_message(ctx.message.channel, content = None, embed=embed)
 
-@my_bot.command()
-async def roll(*args):
+class RollGame(object):
+    def __init__(self):
+        self._state = dict()
+
+    def start(self, cid) -> bool:
+        if cid in self._state:
+            return False
+        self._state[str(cid)] = dict()
+        return True
+
+    def roll(self, cid, uid, val):
+        if str(cid) not in self._state:
+            return True
+        if uid in self._state[cid]:
+            return False
+        self._state[cid][uid] = val
+        return True
+
+    def stop(self, channel_id):
+        state = self._state[channel_id]
+        del self._state[channel_id]
+        return [k for k,v in state.items() if v == max(state.values())]
+
+roll_state = RollGame()
+
+@my_bot.group(name="roll", pass_context=True)
+async def roll(ctx):
     '''
     Roll a random number.
     By default it is [1-100].
     '''
-    return my_bot.say(':game_die: ' + str(random.randint(1, 100)))
+    if ctx.invoked_subcommand is None:
+        r = random.randint(1, 100)
+        cid = ctx.message.channel.id
+        uid = ctx.message.author.name
+        c = roll_state.roll(cid, uid, r)
+        await my_bot.say(':game_die: **' + str(r) + "**"
+                        + (", but I'll not count it "
+                           ":stuck_out_tongue_closed_eyes: " 
+                           if not c else ''))
+
+@roll.command(name="start", pass_context=True)
+async def _roll_start(ctx):
+    '''
+    Start rolling game.
+    '''
+    cid = ctx.message.channel.id
+    if not roll_state.start(cid):
+        await my_bot.say("Game already in progress, make your roll")
+    else:
+        await my_bot.say('Roll game started. start `!roll`ing. 1 min to end')
+        await asyncio.sleep(60)
+        res = roll_state.stop(cid)
+        if not res:
+            await my_bot.say(":robot: *So boring....*")
+        else:
+            suf = 's' if len(res) > 1 else ''
+            con = ' are ' if len(res) > 1 else ' is '
+            await my_bot.say(":first_place: And the winner" +  suf + con +
+                             ', '.join(['**'+ r + '**' for r in res]) + '!' +
+                             "\n Congrats, human" + suf + "!")
+
 
 print('Bot is started...')
 my_bot.run(os.environ['DISCORD_TOKEN'])
