@@ -248,7 +248,7 @@ async def _roll_start(ctx):
                              "\n Congrats, human" + suf + "!")
 
 @my_bot.command()
-def bash():
+async def bash():
     url = 'http://bash.im/forweb/?u'
     headers = {'User-Agent': 'Mozilla/5.0'}
     loop = asyncio.get_event_loop()
