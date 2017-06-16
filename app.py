@@ -210,9 +210,14 @@ async def roll(ctx):
     if ctx.invoked_subcommand is None:
         r = random.randint(1, 100)
         cid = ctx.message.channel.id
+        
         uid = ctx.message.author.name
+        if hasattr(ctx.message.author, 'nick'):
+            if ctx.message.author.nick:
+                uid = ctx.message.author.nick
+
         c = roll_state.roll(cid, uid, r)
-        await my_bot.say(':game_die: **' + str(r) + "**"
+        await my_bot.say('__' + uid + '__ :game_die: **' + str(r) + "**"
                         + (", but I'll not count it "
                            ":stuck_out_tongue_closed_eyes: " 
                            if not c else ''))
