@@ -226,7 +226,9 @@ async def _roll_start(ctx):
     if not roll_state.start(cid):
         await my_bot.say("Game already in progress, make your roll")
     else:
-        await my_bot.say('Roll game started. start `!roll`ing. 1 min to end')
+        await my_bot.say(':timer: Roll game started. Lets rock and `!roll`!\n' +
+                         "Hurry, you have only one minute and only one try.\n" + 
+                         "~~And than I'll kill all humans!!! bugaga!!!~~...")
         await asyncio.sleep(60)
         res = roll_state.stop(cid)
         if not res:
