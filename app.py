@@ -3,7 +3,9 @@ import os
 import asyncio
 import sys
 import psycopg2
-import urllib.parse
+import html
+
+
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.ext.declarative import declarative_base
@@ -245,6 +247,23 @@ async def _roll_start(ctx):
                              ', '.join(['**'+ r + '**' for r in res]) + '!' +
                              "\n Congrats, human" + suf + "!")
 
+@my_bot.command()
+def bash():
+    url = 'http://bash.im/forweb/?u'
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    loop = asyncio.get_event_loop()
+    async_request = loop.run_in_executor(None, requests.get, url, headers=headers)
+    r = await async_request
+    r.encoding = 'utf-8'
+    text = r.text
+    text = text[text.find('b_q_t'):]
+    text = text[text.find('">')+2:]
+    
+    text = text[:text.find("<' + '/div>")]
+    text = text.replace("<' + 'br>", '\n')
+    text = text.replace("<' + 'br />", '\n')
+    text = html.unescape(text)
+    await my_bot.say(text)
 
 print('Bot is started...')
 my_bot.run(os.environ['DISCORD_TOKEN'])
