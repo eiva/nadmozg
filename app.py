@@ -268,5 +268,60 @@ async def bash():
     embed.set_footer(text="Bash.im")
     await my_bot.say(embed=embed)
 
+def wolfram_query(query):
+    query = query.encode('utf-8')
+    api = os.environ["WOLFRAM_API"]
+    response = requests.get('http://api.wolframalpha.com/v2/query?input=%s&appid=%s'%(quote(query), api))
+    try:
+        tree = etree.fromstring(response.content)
+        results = []
+        embed = Embed(color=0xFFFFFF)
+        
+        ident = tree.xpath('//pod[contains(@scanner, "Identity")]/subpod/plaintext')
+
+        if len(ident) > 0:
+            embed.title = ident[0].text
+
+        ok = False
+        def append(name, path):
+            nonlocal ok
+            if ok:
+                return
+            nonlocal embed
+            res = tree.xpath(path)
+            if len(res) > 0:
+                ok = True
+                print('Adding ', res[0].text)
+                embed.add_field(name=name, value=res[0].text)
+
+        append('Solution','//pod[contains(@title, "Solution")]/subpod/plaintext')
+        append('Result','//pod[contains(@title, "Result")]/subpod/plaintext')
+        append('Value','//pod[contains(@scanner, "Numeric")]/subpod/plaintext')
+        append('Data','//pod[contains(@scanner, "Data")]/subpod/plaintext')
+        append('Numerical solution', '//pod[contains(@title, "Numerical solution")]/subpod/plaintext')
+        append('Numerical solutions', '//pod[contains(@title, "Numerical solutions")]/subpod/plaintext')
+        if ok:
+            print('returning data')
+            return embed
+        print("No result", response.text)
+        return None
+    except Exception as e:
+        print("Exception", e, response.text)
+        return None
+
+@my_bot.command()
+async def q(*query:str):
+    '''
+    Try to ask some stupid question, and I'll try to answer it.
+    '''
+    qq = ' '.join(query)
+    loop = asyncio.get_event_loop()
+    async_request = loop.run_in_executor(None, lambda: wolfram_query(qq))
+    e = await async_request
+    if e:
+        await my_bot.say(embed=e)
+    else:
+        await my_bot.say('Dont know answer for: ' + qq +' :weary: ')
+
 print('Bot is started...')
 my_bot.run(os.environ['DISCORD_TOKEN'])
