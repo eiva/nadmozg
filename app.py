@@ -4,7 +4,8 @@ import asyncio
 import sys
 import psycopg2
 import html
-
+from urllib.parse import quote
+from lxml import etree
 
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Float
