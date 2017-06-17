@@ -252,7 +252,7 @@ async def bash():
     url = 'http://bash.im/forweb/?u'
     headers = {'User-Agent': 'Mozilla/5.0'}
     loop = asyncio.get_event_loop()
-    async_request = loop.run_in_executor(None, requests.get, url, headers=headers)
+    async_request = loop.run_in_executor(None, lambda: requests.get(url, headers=headers))
     r = await async_request
     r.encoding = 'utf-8'
     text = r.text
@@ -263,7 +263,10 @@ async def bash():
     text = text.replace("<' + 'br>", '\n')
     text = text.replace("<' + 'br />", '\n')
     text = html.unescape(text)
-    await my_bot.say(text)
+
+    embed = Embed(color=1, description=text)
+    embed.set_footer(text="Bash.im")
+    await my_bot.say(embed=embed)
 
 print('Bot is started...')
 my_bot.run(os.environ['DISCORD_TOKEN'])
