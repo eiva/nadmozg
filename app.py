@@ -22,6 +22,8 @@ import time
 import logging
 import random
 
+from cogs import SmileyCounter
+
 print('Starting bot')
 random.seed()
 
@@ -325,4 +327,5 @@ async def q(*query:str):
         await my_bot.say('Dont know answer for: ' + qq +' :weary: ')
 
 print('Bot is started...')
+my_bot.add_cog(SmileyCounter(my_bot))
 my_bot.run(os.environ['DISCORD_TOKEN'])
