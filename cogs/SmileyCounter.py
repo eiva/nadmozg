@@ -20,7 +20,7 @@ class SmileyCounter(object):
                 self._last = t
                 r = self._react(self._count_smiley(message.content))
                 if r:
-                    await my_bot.send_message(message.channel, r)
+                    await self._bot.send_message(message.channel, r)
 
     def _react(self, s: int) -> str:
         if s <= 2:
