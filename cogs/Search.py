@@ -7,7 +7,7 @@ from lxml import etree
 import requests
 
 
-class Wolfram(object):
+class Search(object):
     '''
     Execute query on wolfram alpha api and return kind of most related replys.
     '''

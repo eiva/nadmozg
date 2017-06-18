@@ -6,7 +6,7 @@ from contextlib import contextmanager
 import utils.Db
 
 from cogs.SmileyCounter import SmileyCounter
-from cogs.Wolfram import Wolfram
+from cogs.Search import Search
 from cogs.RollGame import RollGame
 from cogs.Configuration import Configuration
 from cogs.Weather import Weather
@@ -34,7 +34,7 @@ def timeblock(metric):
 
 my_bot = Bot(command_prefix="!", description="I'm pretty stupid")
 my_bot.add_cog(SmileyCounter(my_bot))
-my_bot.add_cog(Wolfram(my_bot))
+my_bot.add_cog(Search(my_bot))
 my_bot.add_cog(RollGame(my_bot))
 my_bot.add_cog(Configuration(my_bot))
 my_bot.add_cog(Weather(my_bot))
