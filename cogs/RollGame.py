@@ -66,7 +66,8 @@ class RollGame(object):
         cid = ctx.message.channel.id
         
         c = self._roll(cid, uid, r)
-        await self._bot.say('__' + uid + '__ :game_die: **' + str(r) + "**"
+        await self._bot.say('__' + uid + '__ :game_die: _([1-100])_' + 
+                            ') **' + str(r) + "**"
                         + (", but I'll not count it "
                             ":stuck_out_tongue_closed_eyes: " 
                             if not c else ''))
@@ -123,7 +124,7 @@ class RollGame(object):
                 return None
 
         def format_reply(s):
-            return '__' + uid + '__ :game_die: **' + s + '**'
+            return '__' + uid + '__ :game_die: _(' + arg + ')_ **' + s + '**'
 
         s = try_int()
         if s:
