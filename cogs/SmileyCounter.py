@@ -3,6 +3,7 @@ import os
 import time
 from discord.ext.commands import Bot
 import random
+import keen
 
 class SmileyCounter(object):
     '''
@@ -12,6 +13,9 @@ class SmileyCounter(object):
     def __init__(self, bot: Bot) -> None:
         self._bot = bot
         self._last = time.time()
+        
+    def __log(self, grade: int) -> None:
+        keen.add_event("smile", {"str": grade})
 
     async def on_message(self, message):
         if message.author.name == 'skiminokf':
@@ -24,17 +28,22 @@ class SmileyCounter(object):
 
     def _react(self, s: int) -> str:
         if s <= 2:
+            self.__log(0)
             return None
         elif s > 2 and s < 5:
+            self.__log(1)
             return ":)"
         elif s >= 5 and s < 10:
+            self.__log(2)
             return random.choice(("Вот ржака", "Аххахаха", "Гыыыы)", "Лол"))
         elif s < 15:
-            return random.choice(("Ааааа порвало!!!!",
-                                  "Ахахахаха.... фууу... давно я так не ржал",
+            self.__log(3)
+            return random.choice(("Порвало!!!!",
+                                  "Ахахахаха!!!! :)))",
                                   "Ржунимагу", "Ааааааа лоооооол!!!!!!"))
         else:
-            return "Эталон ржача! Кименог Одобряэ."
+            self.__log(4)
+            return "Да-ну, разве это ржака?!"
 
     def _count_smiley(self, s: str) -> int:
         '''
