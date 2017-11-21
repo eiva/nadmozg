@@ -4,6 +4,7 @@ import asyncio
 from utils.Db import Session, GeoLoc
 from discord.embeds import Embed
 import os
+import keen
 
 class Weather(object):
     '''
@@ -13,6 +14,9 @@ class Weather(object):
     def __init__(self, bot: Bot) -> None:
         self._bot = bot
         self._token = os.environ['DARKSKY_TOKEN']
+        
+    def __log(self, loc: str) -> None:
+        keen.add_event("weather", {"loc": loc})
 
     def _color_by_temp(self, t):
         '''
@@ -51,6 +55,7 @@ class Weather(object):
         '''
 
         loc_name = ln.upper()
+        self.__log(loc_name)
         loc = Session.query(GeoLoc).filter(GeoLoc.name == loc_name).first()
         if not loc:
              await self._bot.say('Use `!config geo list` to see all locations or `!config geo add` to add new one')
